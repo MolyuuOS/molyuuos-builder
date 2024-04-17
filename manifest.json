@@ -190,6 +190,7 @@
     "services": {
         "system": {
             "enable": [
+                "bluetooth",
                 "jupiter-fan-control",
                 "sddm",
                 "vpower",
