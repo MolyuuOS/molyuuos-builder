@@ -182,6 +182,7 @@
             "powerstation-bin",
             "python-vdf",
             "ryzenadj",
+            "steam-powerbuttond-git",
             "steam-removable-media-git",
             "zenergy-dkms-git"
         ]
@@ -193,7 +194,8 @@
                 "sddm",
                 "vpower",
                 "systemd-resolved",
-                "NetworkManager"
+                "NetworkManager",
+                "steam-powerbuttond"
             ]
         },
         "user": {
