@@ -65,6 +65,7 @@
             "lib32-curl",
             "lib32-fontconfig",
             "lib32-freetype2",
+            "lib32-gamemode",
             "lib32-libgpg-error",
             "lib32-libnm",
             "lib32-libva",
