@@ -117,8 +117,4 @@ You can read ArchWiki for installation guide, we don't need to use `pacstrap` to
 
 # Known Issues
 
-* `mesa` from SteamOS not working, we are using upstream `mesa` now, TDP Limits may not work.
-
-* Updater is not working on Big Pictrue mode, maybe SteamOS have already switch to `steam-atomupd`.
-
 * Steam Built-in Virtual Keyboard does not support i18n on MolyuuOS, need work to find out why
