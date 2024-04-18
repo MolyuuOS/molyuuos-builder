@@ -115,6 +115,6 @@ After all, simply reboot your Steam Deck, and it will automatically boot into Mo
 ## 2. Clean Install
 You can read ArchWiki for installation guide, we don't need to use `pacstrap` to bootstrap system, just simply extract rootfs tarball for bootstrap, then follow the ArchWiki for post-installation guide.
 
-# Known Issues
+# Known issue
 
-* Steam Built-in Virtual Keyboard does not support i18n on MolyuuOS, need work to find out why
+* Plasma 6 will crash with wayland environment.
