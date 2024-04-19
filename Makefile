@@ -3,7 +3,7 @@
 all: repo image
 
 repo:
-	cd repo && python build.py
+	cd repo && python -u build.py
 
 image:
-	sudo python build.py
+	sudo python -u build.py

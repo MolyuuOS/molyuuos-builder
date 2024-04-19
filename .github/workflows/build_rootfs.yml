@@ -30,7 +30,6 @@ jobs:
     - name: Build repository and build rootfs
       run: |
         chown -R builder:builder .
-        su builder -c "cd $PWD && git clone https://github.com/actionless/pikaur.git && cd pikaur && makepkg -si --noconfirm"
         su builder -c "cd $PWD && make repo && make image"
 
     - name: Upload artifact
