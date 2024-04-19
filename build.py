@@ -173,7 +173,7 @@ class MolyuuOSBuilder:
         init_script_builder.append("molyuuctl login set-manager sddm")
         init_script_builder.append("molyuuctl session register -n desktop -s plasmax11 -l \"qdbus6 org.kde.Shutdown /Shutdown org.kde.Shutdown.logout\"")
         init_script_builder.append("molyuuctl session register -n plasma -s plasmax11 -l \"qdbus6 org.kde.Shutdown /Shutdown org.kde.Shutdown.logout\"")
-        init_script_builder.append("molyuuctl session register -n steam -s gamescope-session-steam")
+        init_script_builder.append("molyuuctl session register -n steam -s gamescope-wayland")
         init_script_builder.append("molyuuctl session set-default steam")
         init_script_builder.append(f"molyuuctl login autologin enable --user {self.username}")
 
