@@ -85,7 +85,10 @@ class MolyuuOSBuilder:
 
         # Copy local packages
         if "local" in self.packages.keys():
-            execute_command(f"cp -r {workdir}/repo/workspace/output {workdir}/workspace/mnt/molyuu_repo")
+            execute_command(f"mv {workdir}/repo/workspace/output {workdir}/workspace/mnt/molyuu_repo")
+
+        # Clean up build cache
+        execute_command(f"rm -rf {workdir}/repo/workspace/build")
 
         # Set Locale
         print("Setting locale")
