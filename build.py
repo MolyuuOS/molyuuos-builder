@@ -39,6 +39,7 @@ class MolyuuOSBuilder:
         self.locale = manifest["locale"]
         self.packages = manifest["packages"]
         self.service = manifest.get("services")
+        self.appendconfig = manifest.get("appendconfig")
         self.pacman_conf_builder = PacmanConfigBuilder(manifest["use_repos"])
 
     def build(self) -> str:
@@ -203,6 +204,12 @@ class MolyuuOSBuilder:
 
         # Remove init script
         execute_command(f"rm {workdir}/workspace/mnt/init.sh")
+
+        # Append custom configs
+        if self.appendconfig is not None:
+            for config in self.appendconfig:
+                path = config["path"]
+                execute_command(f"cat {config} >> {workdir}/workspace/mnt{path}")
 
         # Package rootfs
         if os.path.exists("{workdir}/output"):

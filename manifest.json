@@ -217,5 +217,11 @@
                 "pipewire"
             ]
         }
-    }
+    },
+    "appendconfig": [
+        {
+            "path": "/etc/default/grub",
+            "content": "configs/grub/steamos"
+        }
+    ]
 }
