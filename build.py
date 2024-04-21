@@ -15,6 +15,7 @@ class PacmanConfigBuilder:
         append_configurations = ""
         for repo in self.repos:
             with open(f"pacman/{repo}.conf", "r", encoding="utf-8") as f:
+                append_configurations += "\n"
                 append_configurations += f.read()
                 append_configurations += "\n"
 
@@ -40,6 +41,7 @@ class MolyuuOSBuilder:
         self.packages = manifest["packages"]
         self.service = manifest.get("services")
         self.appendconfig = manifest.get("appendconfig")
+        self.repo_key = manifest.get("repo_key")
         self.pacman_conf_builder = PacmanConfigBuilder(manifest["use_repos"])
 
     def build(self) -> str:
@@ -84,12 +86,12 @@ class MolyuuOSBuilder:
         execute_command(f"mv {workdir}/workspace/mnt/etc/pacman.d/mirrorlist {workdir}/workspace/mnt/etc/pacman.d/mirrorlist.orig")
         execute_command(f"cp /etc/pacman.d/mirrorlist {workdir}/workspace/mnt/etc/pacman.d/mirrorlist")
 
-        # Copy local packages
         if "local" in self.packages.keys():
+            # Copy local packages
             execute_command(f"mv {workdir}/repo/workspace/output {workdir}/workspace/mnt/molyuu_repo")
 
-        # Clean up build cache
-        execute_command(f"rm -rf {workdir}/repo/workspace/build")
+            # Clean up build cache
+            execute_command(f"rm -rf {workdir}/repo/workspace/build")
 
         # Set Locale
         print("Setting locale")
@@ -106,6 +108,10 @@ class MolyuuOSBuilder:
             lang = self.locale.get("lang")
             f.write(f"LANG={lang}")
 
+        # Copy PGP Keys
+        if self.repo_key is not None:
+            execute_command(f"cp {workdir}/pgp_key.asc {workdir}/workspace/mnt/pgp_key.asc")
+
         # Generate initialize script
         init_script_builder = ScriptBuilder()
         init_script_builder.append("set -e")
@@ -115,7 +121,12 @@ class MolyuuOSBuilder:
         init_script_builder.append("locale-gen")
 
         # Pacman initialization
+        init_script_builder.append("pacman-key --init")
         init_script_builder.append("pacman-key --populate")
+        if self.repo_key is not None:
+            init_script_builder.append("pacman-key -a pgp_key.asc")
+            init_script_builder.append(f"pacman-key --lsign-key {self.repo_key}")
+
         init_script_builder.append("pacman -Syy --noconfirm")
 
         # Install packages
@@ -182,7 +193,9 @@ class MolyuuOSBuilder:
         init_script_builder.append(f"molyuuctl login autologin enable --user {self.username}")
 
         # Cleanup image
-        init_script_builder.append("rm -rf /molyuu_repo")
+        if "local" in self.packages.keys():
+            init_script_builder.append("rm -rf /molyuu_repo")
+            
         init_script_builder.append("rm -rf /var/cache/pacman/pkg/*")
         init_script_builder.append("rm -rf /var/log/pacman.log")
         init_script_builder.append("rm -rf /var/lib/pacman/sync/*")
@@ -205,11 +218,15 @@ class MolyuuOSBuilder:
         # Remove init script
         execute_command(f"rm {workdir}/workspace/mnt/init.sh")
 
+        # Remove PGP key
+        execute_command(f"rm -f {workdir}/workspace/mnt/pgp_key.asc")
+
         # Append custom configs
         if self.appendconfig is not None:
             for config in self.appendconfig:
                 path = config["path"]
-                execute_command(f"cat {config} >> {workdir}/workspace/mnt{path}")
+                content = config["content"]
+                execute_command(f"cat {content} >> {workdir}/workspace/mnt{path}")
 
         # Package rootfs
         if os.path.exists("{workdir}/output"):

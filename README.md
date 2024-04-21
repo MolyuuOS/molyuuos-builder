@@ -8,7 +8,7 @@ This repository contains files for building whole MolyuuOS. Keep in mind this pr
 # Build Guide
 1. Build Local Repository
 
-Currently we do not provide repository, you need to build all packages yourself, simply run command:
+If you want to build all packages yourself, simply run command:
 
 ```shell
 make repo

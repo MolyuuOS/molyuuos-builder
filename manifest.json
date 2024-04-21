@@ -1,8 +1,9 @@
 {
     "username": "deck",
     "hostname": "molyuuos",
+    "repo_key": "A27FE10089A63EE1CF23CD1E1B0AFF2FA68924E3",
     "use_repos": [
-        "local",
+        "molyuu",
         "upstream"
     ],
     "locale": {
@@ -149,7 +150,7 @@
             "ladspa",
             "noise-suppression-for-voice"
         ],
-        "local": [
+        "molyuu": [
             "bluez",
             "bluez-plugins",
             "bluez-utils",
@@ -184,7 +185,6 @@
             "python-vdf",
             "ryzenadj",
             "steamdeck-plymouth-theme",
-            "steam-powerbuttond-git",
             "steam-removable-media-git",
             "mesa",
             "mesa-vdpau",
@@ -209,7 +209,7 @@
                 "vpower",
                 "systemd-resolved",
                 "NetworkManager",
-                "steam-powerbuttond"
+                "molyuuos-powerbuttond"
             ]
         },
         "user": {
@@ -219,6 +219,10 @@
         }
     },
     "appendconfig": [
+        {
+            "path": "/etc/default/grub",
+            "content": "configs/grub/plymouth"
+        },
         {
             "path": "/etc/default/grub",
             "content": "configs/grub/steamos"

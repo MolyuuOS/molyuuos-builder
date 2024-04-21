@@ -27,10 +27,10 @@ jobs:
       with:
         submodules: recursive
 
-    - name: Build repository and build rootfs
+    - name: Build RootFS
       run: |
         chown -R builder:builder .
-        su builder -c "cd $PWD && make repo && make image"
+        su builder -c "cd $PWD && make image"
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
