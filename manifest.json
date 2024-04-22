@@ -235,7 +235,7 @@
     "replaceconfig": [
         {
             "path": "/etc/bash.bashrc",
-            "content": "configs/bashrc"
+            "content": "configs/bash/bashrc"
         }
     ]
 }
