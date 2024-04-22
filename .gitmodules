@@ -1,6 +1,0 @@
-[submodule "modules/molyuuctl"]
-	path = modules/molyuuctl
-	url = https://github.com/MolyuuOS/molyuuctl
-[submodule "repo"]
-	path = repo
-	url = https://github.com/MolyuuOS/repo.git

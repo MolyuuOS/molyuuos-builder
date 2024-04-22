@@ -130,12 +130,10 @@ class MolyuuOSBuilder:
         init_script_builder.append("pacman -Syy --noconfirm")
 
         # Install packages
-        package_install_list = ""
-        for repo in self.packages.keys():
-            if repo in self.pacman_conf_builder.repos:
-                package_install_list += " ".join(self.packages[repo])
-                package_install_list += " "
+        package_install_list = " ".join(self.packages["install"])
+        package_remove_list = " ".join(self.packages["remove"])
         init_script_builder.append(f"pacman -S {package_install_list} --noconfirm")
+        init_script_builder.append(f"pacman -Rcs {package_remove_list} --noconfirm")
 
         # Enable/Disable Services
         if self.service is not None:
@@ -185,7 +183,7 @@ class MolyuuOSBuilder:
         init_script_builder.append("sed -i 's,Exec=/usr/bin/steam-runtime,Exec=/usr/bin/steam-runtime -steamdeck,' /usr/share/applications/steam.desktop")
 
         # Initialize molyuuctl
-        init_script_builder.append("molyuuctl login set-manager sddm")
+        init_script_builder.append("molyuuctl login set-manager lightdm")
         init_script_builder.append("molyuuctl session register -n desktop -s plasmax11 -l \"qdbus6 org.kde.Shutdown /Shutdown org.kde.Shutdown.logout\"")
         init_script_builder.append("molyuuctl session register -n plasma -s plasmax11 -l \"qdbus6 org.kde.Shutdown /Shutdown org.kde.Shutdown.logout\"")
         init_script_builder.append("molyuuctl session register -n steam -s gamescope-wayland")
