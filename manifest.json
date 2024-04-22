@@ -231,5 +231,11 @@
             "path": "/etc/default/grub",
             "content": "configs/grub/steamos"
         }
+    ],
+    "replaceconfig": [
+        {
+            "path": "/etc/bash.bashrc",
+            "content": "configs/bashrc"
+        }
     ]
 }

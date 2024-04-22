@@ -41,6 +41,7 @@ class MolyuuOSBuilder:
         self.packages = manifest["packages"]
         self.service = manifest.get("services")
         self.appendconfig = manifest.get("appendconfig")
+        self.replaceconfig = manifest.get("replaceconfig")
         self.repo_key = manifest.get("repo_key")
         self.pacman_conf_builder = PacmanConfigBuilder(manifest["use_repos"])
 
@@ -225,6 +226,13 @@ class MolyuuOSBuilder:
                 path = config["path"]
                 content = config["content"]
                 execute_command(f"cat {content} >> {workdir}/workspace/mnt{path}")
+
+        # Replace configs
+        if self.replaceconfig is not None:
+            for config in self.replaceconfig:
+                path = config["path"]
+                content = config["content"]
+                execute_command(f"cat {content} > {workdir}/workspace/mnt{path}")
 
         # Package rootfs
         if os.path.exists("{workdir}/output"):
