@@ -29,6 +29,7 @@
             "accountsservice",
             "acpi_call-dkms",
             "alsa-firmware",
+            "alsa-ucm-conf",
             "alsa-utils",
             "ark",
             "bash-completion",
