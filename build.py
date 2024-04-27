@@ -1,5 +1,7 @@
 import os
+import sys
 import json
+import requests
 
 def execute_command(command: str):
     if os.system(command) != 0:
@@ -34,7 +36,7 @@ class ScriptBuilder:
 
 
 class MolyuuOSBuilder:
-    def __init__(self, manifest: dict):
+    def __init__(self, manifest: dict, mountpoint: str = None, automount: bool = True, package_rootfs: bool = True):
         self.username = manifest["username"]
         self.hostname = manifest["hostname"]
         self.locale = manifest["locale"]
@@ -43,10 +45,14 @@ class MolyuuOSBuilder:
         self.appendconfig = manifest.get("appendconfig")
         self.replaceconfig = manifest.get("replaceconfig")
         self.repo_key = manifest.get("repo_key")
+        self.mountpoint = mountpoint
+        self.automount = automount
+        self.package_rootfs = package_rootfs
         self.pacman_conf_builder = PacmanConfigBuilder(manifest["use_repos"])
 
-    def build(self) -> str:
+    def build(self) -> bool:
         workdir = os.getcwd()
+        mountpoint = self.mountpoint if self.mountpoint else f"{workdir}/workspace/mnt"
 
         # Build Local Packages if neccessary
         if "local" in self.packages.keys():
@@ -66,52 +72,54 @@ class MolyuuOSBuilder:
         os.mkdir("workspace/rootfs")
 
         # Mount RootFs
-        print("Mounting RootFS, this might require authentication")
-        execute_command(f"mount --bind {workdir}/workspace/rootfs {workdir}/workspace/mnt")
+        if self.automount:
+            print("Mounting RootFS, this might require authentication")
+            execute_command(f"mount --bind {workdir}/workspace/rootfs {mountpoint}")
 
         # Generate pacman.conf with upstream repositories only
-        upstream_only_pacman_conf = PacmanConfigBuilder(["upstream"]).build()
+        upstream_only_pacman_conf = PacmanConfigBuilder(["upstream"]).build().replace("/etc/pacman.d/mirrorlist", f"{mountpoint}/etc/pacman.d/mirrorlist")
         with open("workspace/pacman.upstream.conf", "w", encoding="utf-8") as f:
             f.write(upstream_only_pacman_conf)
 
         # Bootstrap the system
         print("Bootstrapping the system")
-        execute_command(f"pacstrap -K -C {workdir}/workspace/pacman.upstream.conf {workdir}/workspace/mnt")
+        mirrorlist = requests.get("https://archlinux.org/mirrorlist/all/").text.replace("#Server", "Server")
+        execute_command(f"mkdir -p {mountpoint}/etc/pacman.d")
+        with open(f"{mountpoint}/etc/pacman.d/mirrorlist", "w", encoding="utf-8") as f:
+            f.write(mirrorlist)
+        execute_command(f"pacstrap -K -M -C {workdir}/workspace/pacman.upstream.conf {mountpoint}")
 
         # Generate pacman.conf with all repositories
         pacman_conf = self.pacman_conf_builder.build()
-        with open(f"{workdir}/workspace/mnt/etc/pacman.conf", "w", encoding="utf-8") as f:
+        with open(f"{mountpoint}/etc/pacman.conf", "w", encoding="utf-8") as f:
             f.write(pacman_conf)
 
-        # Use builder's mirrorlist
-        execute_command(f"mv {workdir}/workspace/mnt/etc/pacman.d/mirrorlist {workdir}/workspace/mnt/etc/pacman.d/mirrorlist.orig")
-        execute_command(f"cp /etc/pacman.d/mirrorlist {workdir}/workspace/mnt/etc/pacman.d/mirrorlist")
-
+        # Preprare local repository
         if "local" in self.packages.keys():
             # Copy local packages
-            execute_command(f"mv {workdir}/repo/workspace/output {workdir}/workspace/mnt/molyuu_repo")
+            execute_command(f"mv {workdir}/repo/workspace/output {mountpoint}/molyuu_repo")
 
             # Clean up build cache
             execute_command(f"rm -rf {workdir}/repo/workspace/build")
 
         # Set Locale
         print("Setting locale")
-        with open(f"{workdir}/workspace/mnt/etc/locale.gen", "r", encoding="utf-8") as f:
+        with open(f"{mountpoint}/etc/locale.gen", "r", encoding="utf-8") as f:
             locale_gen = f.read()
 
         for locale in self.locale["generate"]:
             locale_gen = locale_gen.replace(f"#{locale}", f"{locale}")
         
-        with open(f"{workdir}/workspace/mnt/etc/locale.gen", "w", encoding="utf-8") as f:
+        with open(f"{mountpoint}/etc/locale.gen", "w", encoding="utf-8") as f:
             f.write(locale_gen)
 
-        with open(f"{workdir}/workspace/mnt/etc/locale.conf", "w", encoding="utf-8") as f:
+        with open(f"{mountpoint}/etc/locale.conf", "w", encoding="utf-8") as f:
             lang = self.locale.get("lang")
             f.write(f"LANG={lang}")
 
         # Copy PGP Keys
         if self.repo_key is not None:
-            execute_command(f"cp {workdir}/pgp_key.asc {workdir}/workspace/mnt/pgp_key.asc")
+            execute_command(f"cp {workdir}/pgp_key.asc {mountpoint}/pgp_key.asc")
 
         # Generate initialize script
         init_script_builder = ScriptBuilder()
@@ -199,59 +207,71 @@ class MolyuuOSBuilder:
         init_script_builder.append("rm -rf /var/log/pacman.log")
         init_script_builder.append("rm -rf /var/lib/pacman/sync/*")
 
-        # Reset mirrorlist
-        init_script_builder.append("rm -f /etc/pacman.d/mirrorlist")
-        init_script_builder.append("mv /etc/pacman.d/mirrorlist.orig /etc/pacman.d/mirrorlist")
-
         # Write init script
         init_script = init_script_builder.build()
-        with open(f"{workdir}/workspace/mnt/init.sh", "w", encoding="utf-8") as f:
+        with open(f"{mountpoint}/init.sh", "w", encoding="utf-8") as f:
             f.write(init_script)
 
         # Set Permission for init script
-        execute_command(f"chmod a+x {workdir}/workspace/mnt/init.sh")
+        execute_command(f"chmod a+x {mountpoint}/init.sh")
 
         # Run init script
-        execute_command(f"arch-chroot {workdir}/workspace/mnt /init.sh")
+        execute_command(f"arch-chroot {mountpoint} /init.sh")
 
         # Remove init script
-        execute_command(f"rm {workdir}/workspace/mnt/init.sh")
+        execute_command(f"rm {mountpoint}/init.sh")
 
         # Remove PGP key
-        execute_command(f"rm -f {workdir}/workspace/mnt/pgp_key.asc")
+        execute_command(f"rm -f {mountpoint}/pgp_key.asc")
 
         # Append custom configs
         if self.appendconfig is not None:
             for config in self.appendconfig:
                 path = config["path"]
                 content = config["content"]
-                execute_command(f"cat {content} >> {workdir}/workspace/mnt{path}")
+                execute_command(f"cat {content} >> {mountpoint}{path}")
 
         # Replace configs
         if self.replaceconfig is not None:
             for config in self.replaceconfig:
                 path = config["path"]
                 content = config["content"]
-                execute_command(f"cat {content} > {workdir}/workspace/mnt{path}")
+                execute_command(f"cat {content} > {mountpoint}{path}")
 
         # Package rootfs
-        if os.path.exists("{workdir}/output"):
-            execute_command(f"rm -rf {workdir}/output")
-        os.mkdir(f"{workdir}/output")
-        execute_command(f"cd {workdir}/workspace/mnt && bsdtar --acls --xattrs -cpvaf {workdir}/output/rootfs.tar.gz .")
+        if self.package_rootfs:
+            if os.path.exists("{workdir}/output"):
+                execute_command(f"rm -rf {workdir}/output")
+            os.mkdir(f"{workdir}/output")
+            execute_command(f"cd {mountpoint} && bsdtar --acls --xattrs -cpvaf {workdir}/output/rootfs.tar.gz .")
 
         # Clean up workspace
-        execute_command(f"umount -l {workdir}/workspace/mnt")
+        if self.automount:
+            execute_command(f"umount -R -l {mountpoint}")
+
         execute_command(f"rm -rf workspace")
-        return "output/rootfs.tar.gz"
+        return True
     
 def main():
+    mountpoint = None
+    if len(sys.argv) == 3:
+        if sys.argv[1] == "--install":
+            mountpoint = sys.argv[2]
+    elif len(sys.argv) != 1:
+        print("Usage: build.py [--install <mountpoint>]")
+        sys.exit(1)
+        
     with open("manifest.json", "r") as f:
         manifest = json.load(f)
         
-    builder = MolyuuOSBuilder(manifest)
-    output = builder.build()
-    print("MolyuuOS image created at: ", output)
+    if not mountpoint:
+        builder = MolyuuOSBuilder(manifest)
+        builder.build()
+        print("MolyuuOS image created at: output/rootfs.tar.gz")
+    else:
+        builder = MolyuuOSBuilder(manifest, mountpoint, False, False)
+        builder.build()
+        print("MolyuuOS has been successfully installed")
 
 if __name__ == "__main__":
     main()
