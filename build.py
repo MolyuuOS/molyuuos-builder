@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import json
 import requests
@@ -79,7 +80,7 @@ class MolyuuOSBuilder:
         # Generate pacman.conf with upstream repositories only
         upstream_only_pacman_conf = PacmanConfigBuilder(["upstream"]).build().replace("/etc/pacman.d/mirrorlist", f"{mountpoint}/etc/pacman.d/mirrorlist")
         with open("workspace/pacman.upstream.conf", "w", encoding="utf-8") as f:
-            f.write(upstream_only_pacman_conf)
+            f.write(re.sub(r"SigLevel\s*=.*", "SigLevel = Never", upstream_only_pacman_conf, re.MULTILINE))
 
         # Bootstrap the system
         print("Bootstrapping the system")

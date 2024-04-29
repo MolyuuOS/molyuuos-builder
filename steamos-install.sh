@@ -61,7 +61,7 @@ function prepare_rootfs() {
     
     # Create and mount subvolume for MolyuuOS
     if kdialog --yesno "Do you want to use the SteamOS Home as the Home for a new installation of MolyuuOS?" ; then
-        $MOLYUUOS_USE_SHARED_HOME="true"
+        MOLYUUOS_USE_SHARED_HOME="true"
     fi
     btrfs subvolume create $MOLYUUOS_ROOTFS_MOUNTPOINT/$MOLYUUOS_ROOTFS_SUBVOL_NAME
     if [[ $MOLYUUOS_USE_SHARED_HOME == "false" ]]; then
@@ -89,6 +89,7 @@ function install_molyuuos() {
     pacman-key --init
     pacman-key --populate archlinux
     pacman-key --populate holo
+    pacman -Sy python-requests --noconfirm
     steamos-readonly enable
 
     # Install MolyuuOS
