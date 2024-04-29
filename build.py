@@ -231,6 +231,7 @@ class MolyuuOSBuilder:
                 path = config["path"]
                 content = config["content"]
                 execute_command(f"cat {content} >> {mountpoint}{path}")
+                execute_command(f"echo >> {mountpoint}{path}")
 
         # Replace configs
         if self.replaceconfig is not None:
